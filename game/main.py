@@ -8,20 +8,8 @@ from game.models.car import Car
 from game.models.directions import Directions
 from game.models.player import Player
 
-pygame.init()
 
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Infinite Car Dodge")
-
-clock = pygame.time.Clock()
-
-SPAWN_EVENT = pygame.USEREVENT + 1
-pygame.time.set_timer(SPAWN_EVENT, SPAWN_INTERVAL)
-
-cars:List[Car] = []
-player:Player = Player()
-
-def extract_game_state() -> List[float]:
+def extract_game_state(cars,player) -> List[float]:
     lst = []
     sorted_cars = sorted(cars, key=lambda c: c.y)
     for i in range(LANE_COUNT):
@@ -35,8 +23,19 @@ def extract_game_state() -> List[float]:
     lst.append(player.y)
     return lst
 
-def main():
-    global cars,player
+def main(action_getter):
+    pygame.init()
+
+    WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Infinite Car Dodge")
+
+    clock = pygame.time.Clock()
+
+    SPAWN_EVENT = pygame.USEREVENT + 1
+    pygame.time.set_timer(SPAWN_EVENT, SPAWN_INTERVAL)
+
+    cars:List[Car] = []
+    player:Player = Player()
     print("Game starting…")
     running = True
     game_over = False
@@ -60,7 +59,7 @@ def main():
             # Removed space-to-continue and restart logic
 
         if not game_over:
-            action = get_ai_action()
+            action = action_getter(cars,player)
             if action=='right':
                 player.move(Directions.RIGHT)
             elif action=='left':
@@ -73,16 +72,17 @@ def main():
                 if (car.y + CAR_HEIGHT > HEIGHT - PLAYER_HEIGHT and car.y + CAR_HEIGHT - HEIGHT < RELAXED_LOWER_BOUND) and car.x < player.x + PLAYER_WIDTH and car.x + CAR_WIDTH > player.x:
                     print("Game Over")
                     game_over = True
+                    running = False
                     survived_time = (pygame.time.get_ticks() - start_ticks) // 1000
                     pygame.quit()
-                    sys.exit()
+                    return survived_time
 
         WIN.fill(WHITE)
         for car in cars:
             car.move()
             car.draw(WIN)
 
-        print(extract_game_state())
+        print(extract_game_state(cars,player))
         # Draw lines from player to each car
         player_center = (player.x + PLAYER_WIDTH // 2, player.y + PLAYER_HEIGHT // 2)
         for car in cars:
@@ -94,9 +94,8 @@ def main():
         clock.tick(60)
 
     pygame.quit()
-    sys.exit()
 
-def get_human_action():
+def get_human_action(cars,player):
     keys = pygame.key.get_pressed()
     if keys[pygame.K_RIGHT]:
         return "right"
@@ -104,10 +103,10 @@ def get_human_action():
         return "left"
     return "stay"
 
-def get_ai_action():
+def get_ai_action(cars,player):
     agent = RandomAgent()
-    return agent.act(extract_game_state())
+    return agent.act(extract_game_state(cars,player))
 
 
 if __name__ == "__main__":
-    main()
+    main(get_ai_action)
