@@ -1,4 +1,5 @@
 import random
+from typing import List
 import pygame
 import sys
 from game.config.constants import CAR_HEIGHT, CAR_WIDTH, LANE_COUNT, PLAYER_HEIGHT, PLAYER_WIDTH, SPAWN_INTERVAL, WIDTH, HEIGHT,WHITE
@@ -16,8 +17,23 @@ clock = pygame.time.Clock()
 SPAWN_EVENT = pygame.USEREVENT + 1
 pygame.time.set_timer(SPAWN_EVENT, SPAWN_INTERVAL)
 
-cars = []
-player=Player()
+cars:List[Car] = []
+player:Player = Player()
+
+def extract_game_state() -> List[float]:
+    lst = []
+    sorted_cars = sorted(cars, key=lambda c: c.y)
+    for i in range(LANE_COUNT):
+        if i < len(sorted_cars):
+            lst.append(sorted_cars[i].x)
+            lst.append(sorted_cars[i].y)
+        else:
+            lst.append(-1)
+            lst.append(-1)
+    lst.append(player.x)
+    lst.append(player.y)
+    return lst
+
 def main():
     global cars,player
     print("Game starting…")
@@ -49,10 +65,10 @@ def main():
                 survived_time = 0
 
         if not game_over:
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_RIGHT]:
+            action = get_human_action()
+            if action=='right':
                 player.move(Directions.RIGHT)
-            elif keys[pygame.K_LEFT]:
+            elif action=='left':
                 player.move(Directions.LEFT)
 
         # Game over logic
@@ -68,6 +84,8 @@ def main():
         for car in cars:
             car.move()
             car.draw(WIN)
+
+        print(extract_game_state())
         # Draw lines from player to each car
         player_center = (player.x + PLAYER_WIDTH // 2, player.y + PLAYER_HEIGHT // 2)
         for car in cars:
@@ -88,6 +106,15 @@ def main():
 
     pygame.quit()
     sys.exit()
+
+def get_human_action():
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_RIGHT]:
+        return "right"
+    elif keys[pygame.K_LEFT]:
+        return "left"
+    return "stay"
+
 
 if __name__ == "__main__":
     main()
