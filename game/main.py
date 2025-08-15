@@ -1,13 +1,12 @@
 import pygame
 import sys
+from game.config.constants import WIDTH, HEIGHT,WHITE
 
 pygame.init()
 
-WIDTH, HEIGHT = 400, 600
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Infinite Car Dodge")
 
-WHITE = (255, 255, 255)
 clock = pygame.time.Clock()
 
 def main():
